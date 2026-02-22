@@ -1,6 +1,8 @@
 import requests
 import random
 import string
+import threading
+import time
 from flask import Flask, request
 from colorama import init, Fore
 
@@ -8,6 +10,25 @@ from colorama import init, Fore
 init(autoreset=True)
 
 app = Flask(__name__)
+
+# --- SELF-PINGING LOGIC TO KEEP RENDER ALIVE ---
+def keep_alive():
+    """Function to ping the server every 30 seconds."""
+    # Wait a few seconds for the server to actually start up
+    time.sleep(5)
+    print(Fore.CYAN + "Keep-alive thread started...")
+    
+    while True:
+        try:
+            # Pinging the local address
+            url = "http://0.0.0.0:6969"
+            requests.get(url)
+            print(Fore.MAGENTA + f"Ping sent to {url} - Status: Active")
+        except Exception as e:
+            print(Fore.RED + f"Keep-alive ping failed: {e}")
+        
+        # Interval: 30 seconds
+        time.sleep(30)
 
 def generate_random_email():
     letters = string.ascii_lowercase + string.digits
@@ -107,5 +128,9 @@ def stripe_api():
     return html_out
 
 if __name__ == '__main__':
+    # Start the keep-alive background thread
+    threading.Thread(target=keep_alive, daemon=True).start()
+    
+    # Run Flask app
     app.run(host='0.0.0.0', port=6969)
 
